@@ -46,22 +46,35 @@ cleanup_fixtures() {
     print "Removed $removed fixture director(ies) created by this run."
     if (( ${#preexisting} > 0 )); then
         print "Left untouched (existed before this run):"
-        print -l -- "  ${(@k)^preexisting}"
+        print -l -- "  ${(@ok)^preexisting}"
     fi
 }
 trap cleanup_fixtures EXIT
+# zsh does not run the EXIT trap when a signal ends the script, so turn
+# interrupts into a normal exit and still remove this run's fixtures.
+trap 'exit 130' INT
+trap 'exit 143' TERM HUP
 
 passed=()
 failed=()
 started=$SECONDS
 
+total_checks=0
+
+# Each group ends with its own total, such as "53 checks passed" or
+# "Startup state checks: 61 passed, 0 failed". PASS lines alone undercount
+# groups that only print a total.
 record() {
-    local name=$1 log_file=$2 group_status=$3 seconds=$4 count
-    count=$(grep -c '^PASS' "$log_file" || true)
+    local name=$1 log_file=$2 group_status=$3 seconds=$4 count summary
     if (( group_status == 0 )); then
+        summary=$(grep -E 'checks passed|checks: [0-9]+ passed' "$log_file" | tail -n 1 || true)
+        count=$(print -r -- "$summary" | grep -Eo '[0-9]+' | head -n 1 || true)
+        [[ -z "$count" ]] && count=$(grep -c '^PASS' "$log_file" || true)
+        total_checks=$((total_checks + count))
         passed+=("$name")
-        print "== $name: ok ($count PASS lines, ${seconds}s)"
+        print "== $name: ok ($count checks, ${seconds}s)"
     else
+        count=$(grep -c '^PASS' "$log_file" || true)
         failed+=("$name")
         print "== $name: FAILED (exit $group_status, $count PASS lines before failure, ${seconds}s, log $log_file)"
     fi
@@ -111,7 +124,7 @@ run_group crash-recovery-tests "${engine[@]}" Tests/CrashRecoveryTests.swift
 run_group localization-tests "${engine[@]}" Tests/LocalizationTests.swift
 
 print ""
-print "Summary: ${#passed} group(s) passed, ${#failed} failed, $((SECONDS - started))s. Logs: $log_dir/"
+print "Summary: ${#passed} group(s) passed ($total_checks checks), ${#failed} failed, $((SECONDS - started))s. Logs: $log_dir/"
 if (( ${#failed} > 0 )); then
     print "Failed groups: ${failed[*]}"
     exit 1
