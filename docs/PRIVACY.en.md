@@ -2,7 +2,7 @@
 
 English · [简体中文](PRIVACY.zh-CN.md)
 
-Applies to Stowfin 1.8.6 Beta distributed by this repository.
+Applies to Stowfin 1.8.7 Beta distributed by this repository.
 
 ## Processing
 
