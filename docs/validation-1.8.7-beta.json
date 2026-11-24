@@ -43,15 +43,24 @@
   "complete_list_fixture_files": 30017,
   "native_validation": {
     "interface_changed_since_1_8_6": false,
-    "built_app_version_verified": "PENDING",
-    "display_names_verified": "PENDING",
-    "codesign_verify_strict": "PENDING"
+    "built_app_version_verified": "1.8.7 (22)",
+    "display_names_verified": {
+      "en": "Stowfin",
+      "zh-Hans": "轻扫"
+    },
+    "codesign_verify_strict": true,
+    "hardened_runtime": true,
+    "zip_extract_matches_build": true,
+    "app_launched_for_validation": false
   },
   "unverified": [
     "First launch on another Mac under default security settings",
     "Actual macOS 14 hardware",
     "Physical external-disk disconnection"
   ],
-  "app_zip_sha256": "PENDING",
-  "executable_sha256": "PENDING"
+  "app_zip_sha256": "26ef9e4a599757e80c67d61d808e67667d200a3c0d2b4aaea84b6a0ba0f97e53",
+  "executable_sha256": "eff836c96edef1b40287b876d574a224e78c5be3525d4a833e8715e1c4e046c8",
+  "source_commit_built": "fb6516ae5df841e95dc2e18f88b3701c5f5db909",
+  "full_suite_runs_on_built_commit": 2,
+  "app_zip_bytes": 1960050
 }
