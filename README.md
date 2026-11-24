@@ -119,7 +119,9 @@ Run the checks:
 zsh check.sh
 ```
 
-Tests generate disposable files. Some really move them to Trash, restore them and terminate dedicated test children. Native UI walkthroughs are performed separately. Localization coverage checks text formatting, plural counts, verbatim names/paths, preference persistence, legacy identifiers and English search of older indexed titles.
+Tests generate disposable files. Some really move them to Trash, restore them and terminate dedicated test children. Native UI walkthroughs are performed separately.
+
+`check.sh` runs every check group before summarising, exits non-zero if any group failed, and keeps each group's output in `.build/check-logs/`. Afterwards it removes only the fixture directories this run created (`/Users/Shared/qingsweep-*` and `testdata-*` in the repository) and leaves directories that existed before untouched; set `STOWFIN_KEEP_FIXTURES=1` to keep them for debugging. Checks that use the Trash need to read `~/.Trash`, so give the terminal or program running them Full Disk Access; without it those groups fail because the app correctly refuses to move files. Localization coverage checks text formatting, plural counts, verbatim names/paths, preference persistence, legacy identifiers and English search of older indexed titles.
 
 ## Feedback and license
 
