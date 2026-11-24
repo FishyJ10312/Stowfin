@@ -116,6 +116,7 @@ final class StorageOwnerResolver {
         if assessment.owner.hasPrefix("Adobe") || assessment.owner == "CreativeCloud" { return StorageOwner(id: "shared:Adobe", title: "Adobe 共享资源", applicationURL: nil) }
         if assessment.ruleID == "cache-pip" { return StorageOwner(id: "tool:pip", title: "Python / pip", applicationURL: nil) }
         if assessment.ruleID == "cache-homebrew" { return StorageOwner(id: "tool:Homebrew", title: "Homebrew", applicationURL: nil) }
+        if assessment.ruleID == "cache-go-build" { return StorageOwner(id: "tool:" + assessment.owner, title: assessment.owner, applicationURL: nil) }
         if let value = known(assessment.owner) { return value }
         if assessment.ruleID.hasPrefix("resolve-") { return owner(id: "com.blackmagic-design.DaVinciResolve", fallback: "DaVinci Resolve") }
         if [.photo,.video,.audio,.project,.preset,.document,.archive,.other].contains(assessment.category) {

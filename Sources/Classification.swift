@@ -214,6 +214,9 @@ final class FileClassifier {
             if match("^com\\.microsoft\\.edgemac/(?:Default|Profile [0-9]+)/(?:Cache/Cache_Data|Code Cache/(?:js|wasm)|GPUCache)/(?:[a-f0-9]+_(?:[0-9]+|s)|[a-f0-9]+)$", rel) != nil {
                 return FileAssessment(category: .cache, disposition: .conditional, owner: "Microsoft Edge", group: "Edge 网页与代码缓存", reason: "仅处理网页与代码缓存；不包含登录状态、密码和历史。", evidence: "精确 Chromium 缓存结构；" + ageEvidence, ruleID: "cache-edge", blockingAppIDs: ["com.microsoft.edgemac"], needsClosedApps: true)
             }
+            if match("^go-build/[0-9a-f]{2}/[0-9a-f]{64}-[ad]$", rel) != nil {
+                return FileAssessment(category: .cache, disposition: days >= 7 ? .priority : .manual, owner: "Go", group: "Go 编译缓存", reason: "已识别 Go 编译缓存；之后编译会重新生成，首次编译可能更慢。", evidence: ageEvidence + " 仅匹配 go-build 缓存结构，不包含模块下载和源码。", ruleID: "cache-go-build", confidence: "已知缓存目录与格式", sourceURL: "https://pkg.go.dev/cmd/go#hdr-Build_and_test_caching", needsClosedApps: true)
+            }
             let owner = String(rel.split(separator: "/").first ?? "未识别应用")
             return FileAssessment(category: .otherCache, disposition: .unknown, owner: owner, group: owner, reason: "仅知道位于 Caches，无法确认内容是否仍有用途。", evidence: "可能包含离线数据、会话资源或运行依赖；请自行确认是否仍需保留。", ruleID: "unknown-cache")
         }
@@ -235,6 +238,26 @@ final class FileClassifier {
         }
         return FileAssessment(category: .other, disposition: .unknown, owner: "个人文件", group: "其他待辨认文件", reason: "用途不足以确定，暂不加入清理。", evidence: ageEvidence, ruleID: "unknown-file")
     }
+    private func versionedInstaller(owner: String, version: String, installed: [InstalledApplication], days: Int, confidence: String) -> FileAssessment? {
+        guard let newest = installed.max(by: { $0.version.compare($1.version, options: .numeric) == .orderedAscending }) else { return nil }
+        let older = version.compare(newest.version, options: .numeric) == .orderedAscending
+        let newer = version.compare(newest.version, options: .numeric) == .orderedDescending
+        let title = older ? " 旧版本安装包" : newer ? " 较新版本安装介质" : " 已安装版本的介质"
+        let reason = older ? "本机已安装更高版本；如果不需要回退，可考虑移走此安装介质。" : newer ? "文件名版本高于本机安装版本，可能用于升级，先保留核对。" : "对应应用已安装；是否保留重装介质由你决定。"
+        return FileAssessment(category: .installer, disposition: older && days >= 7 ? .priority : .manual, owner: owner, group: owner + title, reason: reason, evidence: "文件名版本 \(version)；已安装 \(newest.version)（\(newest.path)）。未挂载安装包、未核验包内版本。", ruleID: older ? "old-installer" : "installed-media", confidence: confidence)
+    }
+    /// Splits installer names such as "Rectangle0.8.dmg", "Firefox 132.0.dmg" or "vlc-3.0.21-arm64.dmg"
+    /// into an application name and a dotted version. Names without a dotted version are not matched.
+    private func genericInstallerName(_ fileName: String) -> (String, String)? {
+        let stem = (fileName as NSString).deletingPathExtension
+        guard let expression = try? NSRegularExpression(pattern: "^([A-Za-z][A-Za-z0-9 ._+-]*?)[ ._-]*[vV]?([0-9]+(?:\\.[0-9]+){1,3})(?:[ ._+-].*)?$"),
+              let result = expression.firstMatch(in: stem, range: NSRange(stem.startIndex..., in: stem)),
+              let nameRange = Range(result.range(at: 1), in: stem), let versionRange = Range(result.range(at: 2), in: stem) else { return nil }
+        return (String(stem[nameRange]), String(stem[versionRange]))
+    }
+    private func normalizedAppName(_ text: String) -> String {
+        String(text.lowercased().unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) })
+    }
     private func installer(_ url: URL, days: Int) -> FileAssessment {
         let name = url.lastPathComponent
         let rules: [(String, String, String)] = [
@@ -247,13 +270,19 @@ final class FileClassifier {
         ]
         for (pattern, bundleID, owner) in rules {
             guard let version = match(pattern, name) else { continue }
-            let installed = context.applications.filter { $0.id == bundleID }
-            guard let newest = installed.max(by: { $0.version.compare($1.version, options: .numeric) == .orderedAscending }) else { break }
-            let older = version.compare(newest.version, options: .numeric) == .orderedAscending
-            let newer = version.compare(newest.version, options: .numeric) == .orderedDescending
-            let title = older ? " 旧版本安装包" : newer ? " 较新版本安装介质" : " 已安装版本的介质"
-            let reason = older ? "本机已安装更高版本；如果不需要回退，可考虑移走此安装介质。" : newer ? "文件名版本高于本机安装版本，可能用于升级，先保留核对。" : "对应应用已安装；是否保留重装介质由你决定。"
-            return FileAssessment(category: .installer, disposition: older && days >= 7 ? .priority : .manual, owner: owner, group: owner + title, reason: reason, evidence: "文件名版本 \(version)；已安装 \(newest.version)（\(newest.path)）。未挂载安装包、未核验包内版本。", ruleID: older ? "old-installer" : "installed-media", confidence: "文件名 + 本机安装信息")
+            guard let assessment = versionedInstaller(owner: owner, version: version, installed: context.applications.filter { $0.id == bundleID }, days: days, confidence: "文件名 + 本机安装信息") else { break }
+            return assessment
+        }
+        if let parsed = genericInstallerName(name) {
+            let (appName, version) = parsed
+            let key = normalizedAppName(appName)
+            let installed = context.applications.filter { app in
+                !app.version.isEmpty && [app.name, URL(fileURLWithPath: app.path).deletingPathExtension().lastPathComponent].contains { normalizedAppName($0) == key }
+            }
+            if key.count >= 3, let owner = installed.first?.name,
+               let assessment = versionedInstaller(owner: owner, version: version, installed: installed, days: days, confidence: "文件名中的应用名称与版本 + 本机安装信息") {
+                return assessment
+            }
         }
         let known: [(String, String, String)] = [
             ("^VSCode-darwin-(?:universal|arm64|x64)\\.dmg$", "com.microsoft.VSCode", "Visual Studio Code"),
