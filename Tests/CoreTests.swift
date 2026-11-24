@@ -103,6 +103,31 @@ import Darwin
         check(classify("Downloads/DaVinci_Resolve_Studio_21.1.1_Mac.dmg").disposition == .priority, "older installer compared with installed application")
         check(classify("Downloads/IINA.v1.3.5.dmg").disposition == .priority, "second older installer rule")
         check(classify("Downloads/IINA.v1.5.0.dmg").disposition == .manual, "same-version installer is not mislabeled old")
+        let generic = FileClassifier(policy: policy, context: InspectionContext(applications: [
+            InstalledApplication(path: "/Applications/Rectangle.app", id: "com.knollsoft.Rectangle", name: "Rectangle", version: "0.85", build: "1"),
+            InstalledApplication(path: "/Applications/Firefox.app", id: "org.mozilla.firefox", name: "Firefox", version: "132.0", build: "1"),
+            InstalledApplication(path: "/Applications/Visual Studio Code.app", id: "com.microsoft.VSCode", name: "Code", version: "1.95.3", build: "1"),
+            InstalledApplication(path: "/Applications/Notion.app", id: "notion.id", name: "Notion", version: "4.0.0", build: "1"),
+            InstalledApplication(path: "/Applications/Unversioned.app", id: "example.unversioned", name: "Unversioned", version: "", build: "")
+        ]))
+        func classifyGeneric(_ name: String, stamp: FileStamp? = nil) -> FileAssessment { generic.assess(base.appendingPathComponent(name), stamp: stamp ?? FileStamp.read(oldCache)!) }
+        let rectangle = classifyGeneric("Downloads/Rectangle0.80.dmg")
+        check(rectangle.disposition == .priority && rectangle.ruleID == "old-installer" && rectangle.owner == "Rectangle" && rectangle.canBatchSelect, "older installer found by file-name application name and version")
+        check(classifyGeneric("Downloads/Firefox 131.0.3.dmg").disposition == .priority, "space-separated installer version compared with installed application")
+        check(classifyGeneric("Downloads/Rectangle0.80.dmg", stamp: FileStamp.read(freshCache)!).disposition == .manual, "recent older installer is not recommended")
+        check(classifyGeneric("Downloads/Firefox 132.0.dmg").ruleID == "installed-media" && classifyGeneric("Downloads/Firefox 132.0.dmg").disposition == .manual, "same-version installer stays manual")
+        check(classifyGeneric("Downloads/Firefox-133.0-arm64.dmg").disposition == .manual, "newer installer stays manual")
+        check(classifyGeneric("Downloads/Notion Calendar-1.0.dmg").ruleID == "unknown-installer", "name prefixes do not match a different installed application")
+        check(classifyGeneric("Downloads/Unversioned-1.0.dmg").ruleID == "unknown-installer", "applications without a version are not compared")
+        check(classifyGeneric("Downloads/Xcode_16.1.dmg").ruleID == "unknown-installer", "installer for an application that is not installed stays unknown")
+        check(classifyGeneric("Downloads/Rectangle0.80.zip").category == .archive, "generic installer matching only applies to dmg and pkg files")
+        check(classifyGeneric("Downloads/Project/Rectangle0.80.dmg").disposition == .protected, "project context overrides generic installer matching")
+        let goHash = String(repeating: "0123456789abcdef", count: 4)
+        let goBuild = classify("Library/Caches/go-build/ab/" + goHash + "-d")
+        check(goBuild.ruleID == "cache-go-build" && goBuild.disposition == .priority && goBuild.canBatchSelect, "old Go build cache entries are recommended")
+        check(semantic.assess(base.appendingPathComponent("Library/Caches/go-build/ab/" + goHash + "-a"), stamp: FileStamp.read(freshCache)!).disposition == .manual, "recent Go build cache entries are not recommended")
+        check(classify("Library/Caches/go-build/README").ruleID == "unknown-cache", "Go cache bookkeeping files stay unverified")
+        check(classify("Library/Caches/go-build/ab/" + goHash + "-d.go").disposition == .protected, "Go source names inside the cache stay protected")
         check(classify("Downloads/FilmForever Power Grades.zip").disposition == .protected, "creative archives protected before installer rules")
         check(classify("Downloads/Project/DaVinci_Resolve_Studio_21.1.1_Mac.dmg").disposition == .protected, "project context overrides matching installer")
         check(classify("Downloads/unknown.zip").category == .archive && !classify("Downloads/unknown.zip").canBatchSelect, "unknown zip is not an installer and cannot join bulk selection")
