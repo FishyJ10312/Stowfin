@@ -26,7 +26,9 @@ import Foundation
             let item = ScanItem(url: file, root: base, stamp: stamp, assessment: FileClassifier(policy: policy, context: InspectionContext()).assess(file, stamp: stamp))
             let environment = SystemCleanupEnvironment(), usage = try await environment.usage(for: [item])
             check(usage.openFiles[file.path]?.contains(app.processIdentifier) == true, "native lsof probe finds the real file handle")
-            let result = await CleanupExecutor(environment: environment, quitTimeout: 2.0).run([item], policy: policy, consent: ManualCleanupConsent(reviewedItems: [item]), cancellation: ScanCancellation()) { _ in }
+            // Each poll runs a full lsof probe, which can take over a second while the rest of the suite
+            // is busy, so the accepting case uses the production timeout. Refusal only needs a short wait.
+            let result = await CleanupExecutor(environment: environment, quitTimeout: refuse ? 2.0 : 10.0).run([item], policy: policy, consent: ManualCleanupConsent(reviewedItems: [item]), cancellation: ScanCancellation()) { _ in }
             if refuse {
                 check(!app.isTerminated && result.trash.records.isEmpty && result.closedApplications.isEmpty && fm.fileExists(atPath: file.path), "native app refusing quit keeps its file untouched")
             } else {
