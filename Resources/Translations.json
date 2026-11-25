@@ -3318,5 +3318,21 @@
   {
     "source": "查看空间分析",
     "english": "View storage analysis"
+  },
+  {
+    "source": "Go 编译缓存",
+    "english": "Go build cache"
+  },
+  {
+    "source": "已识别 Go 编译缓存；之后编译会重新生成，首次编译可能更慢。",
+    "english": "Identified Go build cache. Later builds regenerate it, so the first build may be slower."
+  },
+  {
+    "source": " 仅匹配 go-build 缓存结构，不包含模块下载和源码。",
+    "english": " Only the go-build cache structure is matched, not downloaded modules or source code."
+  },
+  {
+    "source": "文件名中的应用名称与版本 + 本机安装信息",
+    "english": "Application name and version from the file name, compared with installed applications"
   }
 ]
