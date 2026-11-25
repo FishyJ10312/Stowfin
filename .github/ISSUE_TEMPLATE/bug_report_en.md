@@ -8,7 +8,7 @@ assignees: ""
 
 ### Environment
 
-- Stowfin version: 1.8.6 Beta / other
+- Stowfin version: 1.8.7 Beta / other
 - macOS version:
 - Chip:
 - Installation: GitHub Release / built from source

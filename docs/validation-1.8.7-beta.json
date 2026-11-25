@@ -1,0 +1,66 @@
+{
+  "tag": "v1.8.7-beta",
+  "version": "1.8.7",
+  "build": 22,
+  "architecture": "arm64",
+  "minimum_macos": "14.0",
+  "tested_macos": "27.2",
+  "bundle_display_names": {
+    "en": "Stowfin",
+    "zh-Hans": "轻扫"
+  },
+  "uses_existing_local_signing_identity": true,
+  "developer_id_signed": false,
+  "apple_notarized": false,
+  "automated_checks_passed": 858,
+  "automated_groups": 23,
+  "automated_suites": {
+    "CoreTests": 67,
+    "InteractionSupportTests": 24,
+    "StorageAuditTests": 39,
+    "AppModelTests": 32,
+    "StorageIndexTests": 48,
+    "CleanupFlowTests": 37,
+    "ManualCleanupTests": 34,
+    "CleanupExecutionTests": 15,
+    "NativeQuitTests": 9,
+    "StorageCoverageTests": 16,
+    "StorageResumeTests": 13,
+    "CompleteListTests": 1,
+    "Release16Tests": 50,
+    "Release17Tests": 77,
+    "Release18Tests": 52,
+    "RetainedRetryTests": 21,
+    "StartupStateTests": 61,
+    "StorageScopeTests": 18,
+    "ScopeAndReviewTests": 34,
+    "FirstUseTests": 29,
+    "MediaClassificationTests": 25,
+    "CrashRecoveryTests": 126,
+    "LocalizationTests": 30
+  },
+  "localization_entries_checked": 834,
+  "complete_list_fixture_files": 30017,
+  "native_validation": {
+    "interface_changed_since_1_8_6": false,
+    "built_app_version_verified": "1.8.7 (22)",
+    "display_names_verified": {
+      "en": "Stowfin",
+      "zh-Hans": "轻扫"
+    },
+    "codesign_verify_strict": true,
+    "hardened_runtime": true,
+    "zip_extract_matches_build": true,
+    "app_launched_for_validation": false
+  },
+  "unverified": [
+    "First launch on another Mac under default security settings",
+    "Actual macOS 14 hardware",
+    "Physical external-disk disconnection"
+  ],
+  "app_zip_sha256": "26ef9e4a599757e80c67d61d808e67667d200a3c0d2b4aaea84b6a0ba0f97e53",
+  "executable_sha256": "eff836c96edef1b40287b876d574a224e78c5be3525d4a833e8715e1c4e046c8",
+  "source_commit_built": "fb6516ae5df841e95dc2e18f88b3701c5f5db909",
+  "full_suite_runs_on_built_commit": 2,
+  "app_zip_bytes": 1960050
+}
