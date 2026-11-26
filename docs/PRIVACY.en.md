@@ -8,6 +8,10 @@ Applies to Stowfin 1.8.7 Beta distributed by this repository.
 
 Stowfin reads your selected folders and authorized locations locally for storage totals, classification, search, duplicate checks, archiving and cleanup. The app does not upload file contents, paths, scan indexes or cleanup history. It has no application-sent telemetry, advertising or account login.
 
+## Update check
+
+Stowfin makes one kind of network request: a check for a newer release. It runs only when you choose "Check for Updates", or once a day if you turn on "Check for updates daily" (off by default). The check is an anonymous GET of the public release list at `api.github.com/repos/FishyJ10312/Stowfin/releases`. No file names, paths, scan results, hardware details or identifiers are sent, and no cookies are kept. GitHub receives the request like any other web request, including your IP address. Stowfin never downloads or installs an update; a newer version opens its release page in your browser.
+
 File operations and verification read actual files. Duplicate checks, archive verification and recovery may calculate SHA-256 content hashes. Media information is inspected locally. Scan contents are not sent to a cloud model.
 
 ## Local storage

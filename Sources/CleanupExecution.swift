@@ -188,7 +188,8 @@ private enum OpenFileProbe {
             else if tag == 110, let pid, paths.contains(value) { result.openFiles[value, default: []].insert(pid) }
         }
         let rules = Set(items.filter { $0.assessment.needsClosedApps }.map { $0.assessment.ruleID })
-        if !rules.isDisjoint(with: ["cache-pip", "cache-homebrew"]) {
+        let processRules: Set<String> = ["cache-pip", "cache-homebrew", "cache-npm", "cache-cargo", "cache-gradle", "cache-simulator"]
+        if !rules.isDisjoint(with: processRules) {
             let processes = try command("/bin/ps", ["-axo", "pid=,comm=,args="], allowed: [0])
             for line in String(decoding: processes, as: UTF8.self).split(separator: "\n") {
                 let parts = line.split(maxSplits: 2, whereSeparator: { $0 == " " || $0 == "\t" })
@@ -202,6 +203,9 @@ private enum OpenFileProbe {
                 if rules.contains("cache-pip"), executable.hasPrefix("python") || executable.hasPrefix("pip"),
                    args.range(of: #"(?:^|\s|/)pip(?:[0-9.]+)?(?:\s|$)"#, options: .regularExpression) != nil {
                     result.maintenance["cache-pip", default: []].insert(pid); result.processNames[pid] = "pip 安装任务"
+                }
+                if let known = KnownCacheLocations.maintenanceRule(forProcessLine: String(line), executable: executable, rules: rules) {
+                    result.maintenance[known.rule, default: []].insert(pid); result.processNames[pid] = known.title
                 }
             }
         }

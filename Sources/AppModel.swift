@@ -9,7 +9,7 @@ enum AppSection: String, CaseIterable {
     }
 }
 enum ResultPresentation: String, CaseIterable { case groups = "按用途", files = "全部文件" }
-enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "最早修改", name = "文件名称" }
+enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "最早修改", leastUsed = "最久未用", name = "文件名称" }
 
 @MainActor final class AppModel: ObservableObject {
     @Published var section: AppSection = .overview
@@ -94,6 +94,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
     @Published var reviewScopeTitle = "全部已选文件"
     @Published var reviewNotice:String?
     @Published var operationOutcome:OperationOutcome?
+    @Published var trashUsage: TrashUsage?
     private var reviewRetryParent:UUID?
     var managedRetryParent:UUID?
     @Published var presentation: ResultPresentation = .groups
@@ -102,6 +103,8 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
     @Published var inspecting: ScanItem?
     @Published var scannedAt: Date?
     @Published var minimumFilter: Int64 = 0
+    /// Days without modification, opening or being added; 0 shows every file.
+    @Published var unusedFilter: Int = 0 { didSet { cleanupDisplayLimit = 100 } }
     @Published var reviewDisplayLimit = 100
     @Published var review: [ScanItem] = [] { didSet { reviewDisplayLimit = 100; resetManualConfirmation() } }
     @Published var showingReview = false { didSet { if !showingReview { resetManualConfirmation();reviewRetryParent=nil;reviewNotice=nil } } }
@@ -177,6 +180,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
         refresh()
         if startTimer { timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in Task { @MainActor in self?.refresh() } } }
         if needsJournalCheck { reconcileCleanupOperations() }
+        if startTimer { measureTrash(records: history) }
     }
     var busy: Bool { scanning || analyzing || mutating || reconcilingCleanup || loadingReport || loadingStorageIndex || showingReview || addingIndexedFile || workbench.busy }
     var totalBytes: Int64 { items.reduce(0) { $0 + $1.bytes } }
@@ -196,7 +200,8 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
     private var selectionRevision = 0
     private var filteredCache: (key: String, values: [ScanItem])?
     private var groupsCache: (key: String, values: [AssessmentGroup])?
-    private var filterKey: String { [InterfaceLanguage.current.rawValue,String(itemsRevision),String(onlySelected ? selectionRevision : 0),search,cleanupScope?.rawValue ?? "",cleanupOwnerFilter ?? "",category?.rawValue ?? "",disposition?.rawValue ?? "",groupFilter ?? "",String(minimumFilter),String(onlySelected),ordering.rawValue].joined(separator: "\0") }
+    private var activityCache: [String: (stamp: FileStamp, date: Date)] = [:]
+    private var filterKey: String { [InterfaceLanguage.current.rawValue,String(itemsRevision),String(onlySelected ? selectionRevision : 0),search,cleanupScope?.rawValue ?? "",cleanupOwnerFilter ?? "",category?.rawValue ?? "",disposition?.rawValue ?? "",groupFilter ?? "",String(minimumFilter),String(unusedFilter),String(onlySelected),ordering.rawValue].joined(separator: "\0") }
     var filtered: [ScanItem] {
         let key = filterKey
         if let cache = filteredCache, cache.key == key { return cache.values }
@@ -207,17 +212,29 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
             (disposition == nil || item.assessment.disposition == disposition) &&
             (groupFilter == nil || item.assessment.groupID == groupFilter) &&
             (!onlySelected || isSelectedForReview(item)) &&
-            (search.isEmpty || (item.url.path + " " + item.assessment.owner + " " + item.category.rawValue + " " + L(item.assessment.owner) + " " + L(item.category.rawValue)).localizedCaseInsensitiveContains(search))
+            (search.isEmpty || (item.url.path + " " + item.assessment.owner + " " + item.category.rawValue + " " + L(item.assessment.owner) + " " + L(item.category.rawValue)).localizedCaseInsensitiveContains(search)) &&
+            (unusedFilter == 0 || lastActivity(item) < unusedCutoff)
         }
         let sorted = values.sorted { a, b in
             switch ordering {
             case .size: return a.bytes == b.bytes ? a.id < b.id : a.bytes > b.bytes
             case .oldest: return a.modified == b.modified ? a.id < b.id : a.modified < b.modified
+            case .leastUsed:
+                let left = lastActivity(a), right = lastActivity(b)
+                return left == right ? a.id < b.id : left < right
             case .name: return a.url.lastPathComponent == b.url.lastPathComponent ? a.id < b.id : a.url.lastPathComponent.localizedStandardCompare(b.url.lastPathComponent) == .orderedAscending
             }
         }
         filteredCache = (key,sorted)
         return sorted
+    }
+    private var unusedCutoff: Date { Date().addingTimeInterval(-Double(unusedFilter) * 86_400) }
+    /// Latest of modification, last-opened and date-added; Spotlight is consulted for files of 10 MB or more.
+    func lastActivity(_ item: ScanItem) -> Date {
+        if let cached = activityCache[item.id], cached.stamp == item.stamp { return cached.date }
+        let date = FileActivity.lastActivity(item.url, modified: item.modified, useSpotlight: item.bytes >= 10_000_000)
+        activityCache[item.id] = (item.stamp, date)
+        return date
     }
     var displayedCleanupFiles: [ScanItem] { Array(filtered.prefix(cleanupDisplayLimit)) }
     var displayedCleanupGroups: [AssessmentGroup] { Array(groups.prefix(cleanupDisplayLimit)) }
@@ -236,6 +253,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
         switch ordering {
         case .size: return values.sorted { $0.bytes == $1.bytes ? $0.id < $1.id : $0.bytes > $1.bytes }
         case .oldest: return values.sorted { ($0.items.map(\.modified).min() ?? .distantFuture) < ($1.items.map(\.modified).min() ?? .distantFuture) }
+        case .leastUsed: return values.sorted { ($0.items.map(lastActivity).max() ?? .distantFuture) < ($1.items.map(lastActivity).max() ?? .distantFuture) }
         case .name: return values.sorted { $0.assessment.group.localizedStandardCompare($1.assessment.group) == .orderedAscending }
         }        }()
         groupsCache = (key,sorted)
@@ -321,6 +339,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
                     self.currentScanConfiguration = report.schemaVersion == 3 && report.configuration?.isValid(policy: self.policy) == true ? report.configuration : nil
                     self.lastRoots = self.currentScanConfiguration?.roots ?? []
                     self.lastMinimum = self.currentScanConfiguration?.minimumBytes ?? 1_000_000
+                    self.applyUnusedView(self.currentScanConfiguration)
                     self.cleanupDisplayLimit = 100
                 }
                 self.loadingReport = false
@@ -338,19 +357,38 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
     }
     func smartScan() {
         guard !busy else { return }
-        let config = currentScanConfiguration ?? commonScanConfiguration
+        let config = refreshedCommonConfiguration(currentScanConfiguration) ?? commonScanConfiguration
         runStorageAnalysis(navigate: false, recheckingCleanupRoots: config.roots)
         startCleanupScan(config)
     }
     func stopSmartScan() { cancelScan(); cancelStorageAnalysis() }
+    /// Downloads, caches and logs, plus the allowlisted developer and app caches that exist on this Mac.
+    private var commonRoots: [URL] {
+        ["Downloads", "Library/Caches", "Library/Logs"].map { home.appendingPathComponent($0) } + KnownCacheLocations.existingRoots(home: home)
+    }
     private var commonScanConfiguration: ScanConfiguration {
-        ScanConfiguration(roots: ["Downloads", "Library/Caches", "Library/Logs"].map { home.appendingPathComponent($0) },
-                          label: "常用位置", minimumBytes: 1_000_000)
+        ScanConfiguration(roots: commonRoots, label: "常用位置", minimumBytes: 1_000_000)
+    }
+    /// A saved "common locations" scan picks up cache locations added in later versions.
+    private func refreshedCommonConfiguration(_ config: ScanConfiguration?) -> ScanConfiguration? {
+        guard let config else { return nil }
+        return config.label == "常用位置" && config.minimumBytes == 1_000_000 ? commonScanConfiguration : config
     }
     func quickScan() { startCleanupScan(commonScanConfiguration) }
+    private var personalRoots: [URL] {
+        ["Downloads", "Desktop", "Documents", "Movies", "Pictures", "Music"].map { home.appendingPathComponent($0) }.filter { FileManager.default.fileExists(atPath: $0.path) }
+    }
     func personalScan() {
-        let roots = ["Downloads", "Desktop", "Documents", "Movies", "Pictures", "Music"].map { home.appendingPathComponent($0) }.filter { FileManager.default.fileExists(atPath: $0.path) }
-        scan(roots: roots, label: "大文件", minimum: 100_000_000)
+        scan(roots: personalRoots, label: "大文件", minimum: 100_000_000)
+    }
+    func applyUnusedView(_ configuration: ScanConfiguration?) {
+        unusedFilter = configuration?.unusedDays ?? 0
+        if unusedFilter > 0 { ordering = .leastUsed } else if ordering == .leastUsed { ordering = .size }
+    }
+    /// Large personal files that have not been modified, opened or added for half a year.
+    /// They stay in "需自行确认": selecting them is manual and needs the second confirmation.
+    func unusedLargeFileScan() {
+        startCleanupScan(ScanConfiguration(roots: personalRoots, label: "长期未用的大文件", minimumBytes: 100_000_000, unusedDays: 180))
     }
     func chooseFolder() {
         guard !busy else { return }
@@ -364,7 +402,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
     func rescan() {
         guard !busy else { return }
         if section == .results, let storageCleanup { beginStorageCleanup(storageCleanup) }
-        else if let config = currentScanConfiguration { scan(roots: config.roots, label: config.label, minimum: config.minimumBytes) }
+        else if let config = refreshedCommonConfiguration(currentScanConfiguration) { startCleanupScan(config) }
         else { showingScanChooser = true }
     }
     func scan(roots: [URL], label: String, minimum: Int64) {
@@ -410,6 +448,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
                     source.archive = ScanArchive(schemaVersion: 3, scannedAt: now, label: configuration.label,
                                                  result: result, configuration: configuration)
                     self.storageCleanup = source
+                    self.applyUnusedView(configuration)
                     self.selectFirstPopulatedCleanupScope()
                 } else {
                     self.clearCleanupOwner()
@@ -417,6 +456,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
                     self.lastRoots = configuration.roots; self.lastMinimum = configuration.minimumBytes
                     self.currentScanConfiguration = configuration; self.scanLabel = configuration.label
                     self.result = result; self.items = result.items; self.scannedAt = now
+                    self.applyUnusedView(configuration)
                     self.selectFirstPopulatedCleanupScope()
                     self.saveReport()
                 }
@@ -598,6 +638,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
             selected.subtract(removed); history.insert(contentsOf: result.records, at: 0)
             let saveError = saveHistory(); mutating = false; canCancelCleanup = false; cleanupCancellation = nil
             operationOutcome=OperationOutcome(title:outcome.cancelled ? "已停止清理":"清理结果",completed:result.records.count,bytes:receipt.movedBytes,errors:result.errors,receipt:receipt,saveFailure:saveError)
+            measureTrash(records:result.records)
             review=[];saveReport();refreshStorageIndex(paths:result.records.map(\.original));refresh()
         }
     }
@@ -610,7 +651,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
         guard !busy, !records.isEmpty, cleanupJournalFailure == nil, let journal = cleanupJournal else { return }
         mutating = true; operationProgress = "正在恢复文件"
         let service = TrashService(policy: policy)
-        let roots = lastRoots.isEmpty ? ["Downloads", "Library/Caches", "Library/Logs"].map { home.appendingPathComponent($0) } : lastRoots
+        let roots = lastRoots.isEmpty ? commonRoots : lastRoots
         let scanner = DiskScanner(policy: policy, minimumBytes: lastMinimum,
                                   excludedRoots: preferences.ignoredPaths.map { URL(fileURLWithPath: $0) },
                                   includeSmallKnownCaches: lastMinimum == 1_000_000)
@@ -655,6 +696,7 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
                 }
                 let saveError = self.saveHistory(); self.mutating = false; self.saveReport()
                 self.operationOutcome=OperationOutcome(title:"恢复结果",completed:restored.count,bytes:records.filter{restored.contains($0.id)}.reduce(0){$0+$1.bytes},errors:errors,restoreRemaining:records.filter{!restored.contains($0.id)},saveFailure:saveError)
+                self.measureTrash(records: records)
                 self.refreshStorageIndex(paths: records.filter { restored.contains($0.id) }.map(\.original), restoring: true)
                 self.refresh()
             }
@@ -732,6 +774,19 @@ enum FileOrdering: String, CaseIterable { case size = "占用最大", oldest = "
     func reveal(_ url: URL) { NSWorkspace.shared.activateFileViewerSelecting([url]) }
     func copyPath(_ url: URL) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(url.path, forType: .string) }
     func openTrash() { NSWorkspace.shared.open(home.appendingPathComponent(".Trash")) }
+    /// Measures the Trash off the main thread and attaches the result to the current outcome.
+    func measureTrash(records: [TrashRecord]) {
+        let folders = TrashUsage.folders(home: home, records: records), outcomeID = operationOutcome?.id
+        DispatchQueue.global(qos: .utility).async {
+            let usage = TrashUsage.measure(folders)
+            DispatchQueue.main.async {
+                self.trashUsage = usage
+                if var outcome = self.operationOutcome, outcome.id == outcomeID {
+                    outcome.trashUsage = usage; outcome.trashMeasured = true; self.operationOutcome = outcome
+                }
+            }
+        }
+    }
     func openActivityMonitor() { NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")) }
 }
 
@@ -805,6 +860,7 @@ extension AppModel {
             workbench.managedSelected=[];workbench.managedReview=[];workbench.inspection=nil;workbench.managedRetryItems=nil;workbench.leftovers.removeAll{FileStamp.read($0.url)==nil};workbench.applications.removeAll{FileStamp.read(URL(fileURLWithPath:$0.path))==nil}
             let error=saveHistory();mutating=false;canCancelCleanup=false;cleanupCancellation=nil;saveReport();refreshStorageIndex(paths:moved);refresh()
             operationOutcome=OperationOutcome(title:token.isCancelled ? "已停止清理":"清理结果",completed:result.records.count,bytes:receipt.movedBytes,errors:result.errors,receipt:receipt,saveFailure:error)
+            measureTrash(records:result.records)
         }
     }
     func showStorageOwner(_ id:String,title:String){

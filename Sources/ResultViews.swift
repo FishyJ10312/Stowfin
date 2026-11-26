@@ -5,7 +5,7 @@ func decisionColor(_ value: CleanupDisposition) -> Color {
 }
 struct ResultsView: View {
     @EnvironmentObject var model: AppModel
-    private var hasFilters: Bool { model.category != nil || model.groupFilter != nil || !model.search.isEmpty || model.minimumFilter > 0 || model.onlySelected }
+    private var hasFilters: Bool { model.category != nil || model.groupFilter != nil || !model.search.isEmpty || model.minimumFilter > 0 || model.unusedFilter > 0 || model.onlySelected }
     private var scope: CleanupScope { model.cleanupScope ?? .recommended }
     var body: some View {
         VStack(spacing: 12) {
@@ -97,6 +97,7 @@ struct ResultsView: View {
                 Divider()
                 Button(L("扫描常用位置"), action: model.quickScan)
                 Button(L("查找大文件"), action: model.personalScan)
+                Button(L("查找长期未用的大文件"), action: model.unusedLargeFileScan)
                 Button(L("扫描文件夹"), action: model.chooseFolder)
             } label: { Label(L("扫描"), systemImage: "arrow.clockwise") }.disabled(model.busy)
         }
@@ -137,6 +138,7 @@ struct ResultsView: View {
                         ForEach(FileCategory.allCases) { Text(L($0.title)).tag(Optional($0)) }
                     }
                     Picker(L("大小"), selection: $model.minimumFilter) { Text(L("全部大小")).tag(Int64(0)); Text(L("至少 100 MB")).tag(Int64(100_000_000)); Text(L("至少 1 GB")).tag(Int64(1_000_000_000)) }
+                    Picker(L("未使用时间"), selection: $model.unusedFilter) { ForEach([0] + FileActivity.thresholds, id: \.self) { Text(L(FileActivity.title(days: $0))).tag($0) } }
                     Toggle(L("只看已选文件"), isOn: $model.onlySelected)
                 } label: { Label(L("筛选"), systemImage: "line.3.horizontal.decrease") }.fixedSize()
                 Picker(L("排序"), selection: $model.ordering) { ForEach(FileOrdering.allCases, id: \.self) { Text(L($0.rawValue)).tag($0) } }.labelsHidden().frame(width: 112)
@@ -146,11 +148,15 @@ struct ResultsView: View {
     private var listHeading: some View {
         HStack(spacing: 10) {
             Text(L("\(model.filtered.count) 项")).font(.system(size: 13, weight: .medium)).foregroundStyle(SweepStyle.secondary)
+            if model.unusedFilter > 0 {
+                Text(verbatim: "· " + L(FileActivity.title(days: model.unusedFilter))).font(.system(size: 12)).foregroundStyle(SweepStyle.secondary)
+                    .help(L("按修改、打开和加入文件夹的时间中最近的一次计算；Spotlight 关闭时只能参考修改时间。"))
+            }
             if let config = model.cleanupConfiguration, config.minimumBytes > 1_000_000 {
                 Text(L("· " + formatBytes(config.minimumBytes) + " 以上")).font(.system(size: 12)).foregroundStyle(SweepStyle.secondary)
             }
             Spacer(minLength: 4)
-            if hasFilters { Button(L("清除筛选"), action: model.clearCleanupFilters).buttonStyle(.plain).font(.system(size: 12)) }
+            if hasFilters { Button(L("清除筛选"), action: model.clearAllCleanupFilters).buttonStyle(.plain).font(.system(size: 12)) }
             if model.cleanupScope == .recommended {
                 Button { model.selectPriority() } label: {
                     Label(L(model.unselectedRecommendations.isEmpty && !model.currentSelection.isEmpty ? "已选全部推荐" : "全选推荐项"), systemImage: "checklist")
@@ -165,7 +171,7 @@ struct ResultsView: View {
     private var emptyResult: some View {
         VStack(spacing: 16) {
             ContentUnavailableView(L(emptyTitle), systemImage: "tray")
-            if hasFilters { Button(L("清除筛选"), action: model.clearCleanupFilters).buttonStyle(SweepOutlineButton()) }
+            if hasFilters { Button(L("清除筛选"), action: model.clearAllCleanupFilters).buttonStyle(SweepOutlineButton()) }
             if model.cleanupScope == .recommended && !model.scopeItems(.optional).isEmpty { Button(L("查看可自行选择")) { model.selectCleanupScope(.optional) }.buttonStyle(SweepOutlineButton()) }
             if model.storageCleanup != nil {
                 Button(L("查看完整清单"), action: model.clearCleanupOwner).buttonStyle(SweepOutlineButton()).disabled(model.busy)
@@ -274,7 +280,12 @@ struct FileRow: View {
             }.frame(maxWidth: .infinity, alignment: .leading)
             VStack(alignment: .trailing, spacing: 8) {
                 Text(L(formatBytes(item.bytes))).font(.system(size: 14, weight: .medium)).monospacedDigit()
-                Text(item.modified, format: .dateTime.year().month().day().locale(InterfaceLanguage.current.locale)).font(.system(size: 12)).foregroundStyle(SweepStyle.secondary)
+                if model.unusedFilter > 0 || model.ordering == .leastUsed {
+                    Text(model.lastActivity(item), format: .dateTime.year().month().day().locale(InterfaceLanguage.current.locale)).font(.system(size: 12)).foregroundStyle(SweepStyle.secondary)
+                        .help(L("最近使用时间"))
+                } else {
+                    Text(item.modified, format: .dateTime.year().month().day().locale(InterfaceLanguage.current.locale)).font(.system(size: 12)).foregroundStyle(SweepStyle.secondary)
+                }
             }.frame(width: 100, alignment: .trailing)
             Button { model.preview(item.url) } label: { Image(systemName: "eye").frame(width: 24, height: 28) }.buttonStyle(.plain).accessibilityLabel(L("预览 ") + item.url.lastPathComponent)
             Menu {

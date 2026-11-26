@@ -114,6 +114,6 @@ enum RestoreAvailability: String, Codable {
 
 extension ScanConfiguration {
     func isValid(policy: SafetyPolicy) -> Bool {
-        !roots.isEmpty && roots.count <= 100 && minimumBytes >= 0 && roots.allSatisfy { $0.isFileURL && policy.permits($0) }
+        !roots.isEmpty && roots.count <= 100 && minimumBytes >= 0 && (unusedDays.map { (1...3650).contains($0) } ?? true) && roots.allSatisfy { $0.isFileURL && policy.permits($0) }
     }
 }

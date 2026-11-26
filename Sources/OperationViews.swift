@@ -51,6 +51,21 @@ struct OperationOutcomeView: View {
         Text(L("文件仍在废纸篓，可从清理记录恢复；清空废纸篓后才释放空间。")).font(.system(size: 12)).foregroundStyle(
           SweepStyle.secondary)
       }
+      if current.completed > 0 {
+        HStack(spacing: 12) {
+          Image(systemName: "trash").foregroundStyle(SweepStyle.secondary)
+          if let usage = current.trashUsage {
+            Text(L(usage.summary)).font(.system(size: 13, weight: .medium)).fixedSize(horizontal: false, vertical: true)
+          } else if current.trashMeasured {
+            Text(L("无法读取废纸篓大小；可能需要在系统设置中允许完全磁盘访问。")).font(.system(size: 12)).foregroundStyle(SweepStyle.secondary)
+          } else {
+            ProgressView().controlSize(.small)
+            Text(L("正在统计废纸篓占用…")).font(.system(size: 12)).foregroundStyle(SweepStyle.secondary)
+          }
+          Spacer(minLength: 0)
+          Button(L("打开废纸篓"), action: model.openTrash).buttonStyle(SweepOutlineButton())
+        }.padding(12).background(CleanupScope.optional.color.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+      }
       if !current.errors.isEmpty {
         ScrollView {
           LazyVStack(alignment: .leading, spacing: 12) {

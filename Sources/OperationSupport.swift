@@ -155,6 +155,8 @@ struct OperationOutcome: Identifiable {
   var receipt: CleanupReceipt? = nil
   var restoreRemaining: [TrashRecord] = []
   var saveFailure: String? = nil
+  var trashUsage: TrashUsage? = nil
+  var trashMeasured = false
 }
 
 enum ToolTaskKind: String, Codable {
