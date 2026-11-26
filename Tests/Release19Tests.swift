@@ -102,7 +102,8 @@ import Darwin
         """#
         let newer = try UpdateCheck.newerRelease(than: "1.8.7", in: Data(json.utf8))
         check(newer?.version == "1.9.0" && newer?.displayVersion == "1.9.0 Beta", "the newest published release is offered")
-        check(try UpdateCheck.newerRelease(than: "1.9.0", in: Data(json.utf8)) == nil, "drafts and links outside the release pages are ignored")
+        let none = try UpdateCheck.newerRelease(than: "1.9.0", in: Data(json.utf8))
+        check(none == nil, "drafts and links outside the release pages are ignored")
         check((try? UpdateCheck.latest(fromJSON: Data("{\"message\":\"rate limited\"}".utf8))) == nil, "an API error body is not mistaken for a release")
 
         let suite = "QingSweep.Release19Tests." + UUID().uuidString
