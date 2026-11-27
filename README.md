@@ -8,9 +8,9 @@ English · [简体中文](README.zh-CN.md)
 
 Stowfin is a local macOS storage browser and manual cleanup tool, licensed under MIT. Explore usage by application or folder, review installers, cache and personal files separately, then choose what to move to Trash.
 
-**1.8.7 Beta · build 22.** The app displays **Stowfin** in English and **轻扫** in Simplified Chinese. This Beta uses a local signing certificate and ships **without Apple notarization or a Developer ID signature**. macOS may ask you to verify the app on first launch. Follow the [installation guide](docs/INSTALL.en.md).
+**1.9.0 Beta · build 23.** The app displays **Stowfin** in English and **轻扫** in Simplified Chinese. This Beta uses a local signing certificate and ships **without Apple notarization or a Developer ID signature**. macOS may ask you to verify the app on first launch. Follow the [installation guide](docs/INSTALL.en.md).
 
-[Download for Apple Silicon](https://github.com/FishyJ10312/Stowfin/releases/download/v1.8.7-beta/Stowfin-1.8.7-beta-arm64.zip) · [Beta release](https://github.com/FishyJ10312/Stowfin/releases/tag/v1.8.7-beta) · [Report an issue](https://github.com/FishyJ10312/Stowfin/issues/new?template=bug_report_en.md)
+[Download for Apple Silicon](https://github.com/FishyJ10312/Stowfin/releases/download/v1.9.0-beta/Stowfin-1.9.0-beta-arm64.zip) · [Beta release](https://github.com/FishyJ10312/Stowfin/releases/tag/v1.9.0-beta) · [Report an issue](https://github.com/FishyJ10312/Stowfin/issues/new?template=bug_report_en.md)
 
 **Media and projects are unselected by default.** You can add them manually, including from file details in Storage. Moving them to Trash requires a second confirmation.
 
@@ -94,11 +94,11 @@ Switching language preserves selections and stored records. File names and paths
 | Hardware | Apple Silicon / arm64; no Intel download in this release |
 | macOS | Built for macOS 14 or later; actual device validation on macOS 27.2 |
 | Signing | Persistent local certificate and Hardened Runtime; **no Developer ID or Apple notarization** |
-| Checks | Full suite: 858 automated checks in 23 groups, including 126 crash-recovery checks, 34 scope/review checks and localization of 834 entries. Separate 30,017-file list fixture. |
-| Native verification | Interface unchanged since 1.8.6. Built app version, display names and signature checked; new installer and Go cache rules covered by automated checks with generated files |
+| Checks | Full suite: 955 automated checks in 25 groups, including 126 crash-recovery checks, 62 allowlisted-cache checks, 35 checks for Trash usage, unused files and the update check, and localization of 894 entries. Separate 30,017-file list fixture. |
+| Native verification | Built app version, display names and signature checked. New cache rules, Trash usage, the unused-file view and the update check are covered by automated checks with generated files; the app was not launched for validation, so the new interface elements have no screenshots yet |
 | Still pending | First launch on another Mac with default Gatekeeper, actual macOS 14 hardware, more file systems and physical external-disk disconnection tests |
 
-This is a **Pre-release** for feedback. Try a disposable folder first. See the [release and validation notes](docs/RELEASE_1.8.7_BETA.md).
+This is a **Pre-release** for feedback. Try a disposable folder first. See the [release and validation notes](docs/RELEASE_1.9.0_BETA.md).
 
 ## Installation and privacy
 
@@ -131,6 +131,6 @@ Tests generate disposable files. Some really move them to Trash, restore them an
 
 Please include your app version, macOS version, chip and reproduction steps in an [issue](https://github.com/FishyJ10312/Stowfin/issues/new?template=bug_report_en.md). Redact personal names and paths in screenshots. Do not attach complete scan databases, cleanup history, media or projects.
 
-[MIT License](LICENSE) · [Third-party attribution](NOTICE.md) · [1.8.7 release notes](docs/RELEASE_1.8.7_BETA.md) · [1.8.4 launch copy](docs/PROMO.en.md)
+[MIT License](LICENSE) · [Third-party attribution](NOTICE.md) · [1.9.0 release notes](docs/RELEASE_1.9.0_BETA.md) · [1.8.4 launch copy](docs/PROMO.en.md)
 
 Stowfin is an independent project and is not affiliated with Apple or MacPaw.

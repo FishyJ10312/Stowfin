@@ -1,0 +1,68 @@
+{
+  "tag": "v1.9.0-beta",
+  "version": "1.9.0",
+  "build": 23,
+  "architecture": "arm64",
+  "minimum_macos": "14.0",
+  "tested_macos": "27.2",
+  "bundle_display_names": {
+    "en": "Stowfin",
+    "zh-Hans": "轻扫"
+  },
+  "uses_existing_local_signing_identity": true,
+  "developer_id_signed": false,
+  "apple_notarized": false,
+  "automated_checks_passed": 955,
+  "automated_groups": 25,
+  "automated_suites": {
+    "CoreTests": 67,
+    "InteractionSupportTests": 24,
+    "StorageAuditTests": 39,
+    "AppModelTests": 32,
+    "StorageIndexTests": 48,
+    "CleanupFlowTests": 37,
+    "ManualCleanupTests": 34,
+    "CleanupExecutionTests": 15,
+    "KnownCacheTests": 62,
+    "NativeQuitTests": 9,
+    "StorageCoverageTests": 16,
+    "StorageResumeTests": 13,
+    "CompleteListTests": 1,
+    "Release16Tests": 50,
+    "Release17Tests": 77,
+    "Release18Tests": 52,
+    "RetainedRetryTests": 21,
+    "StartupStateTests": 61,
+    "StorageScopeTests": 18,
+    "ScopeAndReviewTests": 34,
+    "FirstUseTests": 29,
+    "MediaClassificationTests": 25,
+    "CrashRecoveryTests": 126,
+    "LocalizationTests": 30,
+    "Release19Tests": 35
+  },
+  "localization_entries_checked": 894,
+  "complete_list_fixture_files": 30017,
+  "native_validation": {
+    "interface_changed_since_1_8_7": true,
+    "built_app_version_verified": "1.9.0 (23)",
+    "display_names_verified": {
+      "en": "Stowfin",
+      "zh-Hans": "轻扫"
+    },
+    "codesign_verify_strict": true,
+    "hardened_runtime": true,
+    "zip_extract_matches_build": true,
+    "app_launched_for_validation": false
+  },
+  "unverified": [
+    "First launch on another Mac under default security settings",
+    "Actual macOS 14 hardware",
+    "Physical external-disk disconnection"
+  ],
+  "app_zip_sha256": "PENDING",
+  "executable_sha256": "PENDING",
+  "source_commit_built": "PENDING",
+  "full_suite_runs_on_built_commit": 0,
+  "app_zip_bytes": "PENDING"
+}
