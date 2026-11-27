@@ -72,6 +72,10 @@ Related applications may be asked to quit normally. Save your work when prompted
 
 - **Storage browser:** application totals, folder navigation and breadcrumbs, parent/back controls, paginated lists, full-index search and a space map.
 - **Complete cleanup list:** purpose-based groups, classification evidence, impact descriptions and previews. Adding recommendations never automatically selects media or projects.
+- **Developer and app caches:** common locations also cover npm, Cargo, Gradle, iOS Simulator, Slack, VS Code and Discord caches. Each rule opens only its own cache folder; other hidden folders and Library data stay unread.
+- **Large files unused for a long time:** lists large personal files whose latest modification, opening or addition is more than six months old. They still need individual selection and a second confirmation.
+- **Trash usage:** after cleanup, shows how much the Trash now holds, since the space is freed only when you empty it.
+- **Update check:** check GitHub for a newer release from the sidebar. Daily automatic checks are off by default, and nothing is downloaded or installed automatically.
 - **Access assistant:** identifies unread locations, guides you to the required macOS permission and performs a real read after you return.
 - **Incremental scans:** updates changed areas and continues incomplete folders.
 - **Operation journal and restore:** logs each file operation, reconciles interrupted batches on restart and restores without overwriting existing destinations.

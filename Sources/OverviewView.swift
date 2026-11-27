@@ -25,6 +25,7 @@ struct OverviewView: View {
                             Button(L("扫描空间与清理项"), action: model.smartScan)
                             Divider()
                             Button(L("查找大文件")) { model.personalScan(); model.section = .results }
+                            Button(L("查找长期未用的大文件")) { model.unusedLargeFileScan(); model.section = .results }
                             Button(L("选择文件夹"), action: model.chooseFolder)
                         } label: { Text(L("范围")) }.disabled(model.busy)
                     }

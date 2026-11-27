@@ -190,6 +190,9 @@ final class FileClassifier {
             return protectedAssessment(.document, "个人文档与学习资料，请确认用途后决定是否删除。", "文档格式 .\(ext)")
         }
 
+        if let known = KnownCacheLocations.match(url, home: policy.home) {
+            return knownCache(known.location, relative: known.relative, name: name, days: days, ageEvidence: ageEvidence)
+        }
         if inCache {
             if rel.hasPrefix("ms-playwright/") || rel.hasPrefix("node-gyp/") || rel.hasPrefix("ffmpeg-static-nodejs/") || rel.hasPrefix("typescript/") {
                 return FileAssessment(category: .runtime, disposition: .protected, owner: String(rel.split(separator: "/").first ?? "开发工具"), group: "开发工具运行资源", reason: "工具运行所需的资源，删除后可能需要重新安装或下载。", evidence: "删除浏览器或编解码工具可能使现有工作流失效。", ruleID: "protect-runtime")
@@ -237,6 +240,62 @@ final class FileClassifier {
             return FileAssessment(category: .archive, disposition: .unknown, owner: "个人下载", group: "待辨认压缩包", reason: "压缩格式不能证明是安装包，可能装有素材、项目或备份。", evidence: "未解压或执行内容，保留等待人工辨认。", ruleID: "unknown-archive")
         }
         return FileAssessment(category: .other, disposition: .unknown, owner: "个人文件", group: "其他待辨认文件", reason: "用途不足以确定，暂不加入清理。", evidence: ageEvidence, ruleID: "unknown-file")
+    }
+    /// Files in an allowlisted cache subtree must also match that rule's known layout.
+    private func knownCache(_ location: KnownCacheLocation, relative rel: String, name: String, days: Int, ageEvidence: String) -> FileAssessment {
+        let chromiumEntry = "(?:[a-f0-9]+_(?:[0-9]+|s)|[a-f0-9]+)"
+        let pattern: String
+        let disposition: CleanupDisposition
+        let reason: String
+        let scope: String
+        switch location.layout {
+        case .npm:
+            pattern = "^(?:content-v2/sha(?:512|384|256|1)/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{20,}|index-v5/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{20,})$"
+            disposition = .priority
+            reason = "已识别 npm 下载缓存；之后安装会重新下载，已安装的 node_modules 不受影响。"
+            scope = " 仅匹配 _cacache 的内容与索引结构，不包含 npm 配置、日志和全局安装的包。"
+        case .cargo:
+            pattern = "^[^/]+/[A-Za-z0-9_.+-]+\\.crate$"
+            disposition = .priority
+            reason = "已识别 Cargo 下载的 .crate 压缩包；之后编译会按需重新下载。"
+            scope = " 仅匹配 registry/cache 中的 .crate 文件，不包含已解压源码、Cargo 配置和凭据。"
+        case .gradle:
+            pattern = "^[^/]+/[^/]+/[^/]+/[0-9a-f]{20,40}/[^/]+\\.(?:jar|aar|pom|module|klib)$"
+            disposition = days >= 30 ? .priority : .manual
+            reason = "已识别 Gradle 依赖下载缓存；之后构建会重新下载，首次构建可能更慢。"
+            scope = " 仅匹配 modules-2/files-2.1 的依赖文件，不包含构建脚本、Gradle 配置和项目输出。"
+        case .simulator:
+            pattern = "^dyld/.+"
+            disposition = .conditional
+            reason = "模拟器系统共享缓存；下次启动模拟器时会重新生成，首次启动会更慢。"
+            scope = " 仅匹配 CoreSimulator/Caches/dyld，不包含模拟器设备、应用和数据。"
+        case .chromiumCache:
+            pattern = "^Cache_Data/" + chromiumEntry + "$"
+            disposition = .conditional
+            reason = "仅识别网页缓存；内容会重新下载，不包含登录状态、消息记录和设置。"
+            scope = " 精确 Chromium 缓存结构，不涉及 Cookie、本地存储和数据库。"
+        case .chromiumCodeCache:
+            pattern = "^(?:js|wasm)/" + chromiumEntry + "$"
+            disposition = .conditional
+            reason = "仅识别脚本编译缓存；应用下次启动时重新生成。"
+            scope = " 精确 Chromium 代码缓存结构，不涉及 Cookie、本地存储和数据库。"
+        case .chromiumGPUCache:
+            pattern = "^" + chromiumEntry + "$|^(?:data_[0-9]+|f_[0-9a-f]+|index)$"
+            disposition = .conditional
+            reason = "仅识别图形着色器缓存；应用下次启动时重新生成。"
+            scope = " 精确 GPUCache 结构，不涉及 Cookie、本地存储和数据库。"
+        case .electronCachedData:
+            pattern = "^[0-9a-f]{40}/(?:[^/]+/){0,3}[^/]+$"
+            disposition = .conditional
+            reason = "按应用版本保存的脚本编译缓存；应用下次启动时重新生成。"
+            scope = " 仅匹配以版本提交号命名的 CachedData 子目录，不包含扩展、设置和工作区数据。"
+        }
+        guard match(pattern, rel) != nil else {
+            return FileAssessment(category: .otherCache, disposition: .unknown, owner: location.owner, group: location.owner, reason: "位于已知缓存目录，但不符合已核实的缓存结构，暂不加入清理。", evidence: "可能是临时文件、锁文件或新版本格式；请自行确认是否仍需保留。", ruleID: "unknown-" + location.ruleID)
+        }
+        let running = !context.runningIDs.isDisjoint(with: location.blockingAppIDs)
+        let appNote = location.blockingAppIDs.isEmpty ? " 清理前会检查相关任务是否仍在运行。" : running ? " 相关应用正在运行，清理前会自动退出。" : " 清理前会检查相关应用是否已退出。"
+        return FileAssessment(category: .cache, disposition: disposition, owner: location.owner, group: location.group, reason: reason, evidence: ageEvidence + scope + appNote, ruleID: location.ruleID, confidence: "已知缓存目录与格式", sourceURL: location.sourceURL, blockingAppIDs: location.blockingAppIDs, needsClosedApps: true)
     }
     private func versionedInstaller(owner: String, version: String, installed: [InstalledApplication], days: Int, confidence: String) -> FileAssessment? {
         guard let newest = installed.max(by: { $0.version.compare($1.version, options: .numeric) == .orderedAscending }) else { return nil }
@@ -307,6 +366,8 @@ struct ScanConfiguration: Codable, Equatable {
     let roots: [URL]
     let label: String
     let minimumBytes: Int64
+    /// Opens the results filtered to files unused for this many days (the long-unused large-file view).
+    var unusedDays: Int? = nil
 }
 
 struct ScanArchive: Codable {

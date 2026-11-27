@@ -107,6 +107,7 @@ run_group index-tests "${engine[@]}" Tests/StorageIndexTests.swift
 run_group cleanup-flow-tests "${engine[@]}" Tests/CleanupFlowTests.swift
 run_group manual-cleanup-tests "${engine[@]}" Tests/ManualCleanupTests.swift
 run_group execution-tests "${common[@]}" Sources/CleanupExecution.swift Tests/CleanupExecutionTests.swift
+run_group known-cache-tests "${common[@]}" Sources/CleanupExecution.swift Tests/KnownCacheTests.swift
 run_script native-quit-tests ./check-native-quit.sh
 run_group coverage-tests "${engine[@]}" Tests/StorageCoverageTests.swift
 run_group resume-tests "${engine[@]}" Tests/StorageResumeTests.swift
@@ -122,6 +123,7 @@ run_group first-use-tests "${engine[@]}" Tests/FirstUseTests.swift
 run_group media-classification-tests "${common[@]}" Tests/MediaClassificationTests.swift
 run_group crash-recovery-tests "${engine[@]}" Tests/CrashRecoveryTests.swift
 run_group localization-tests "${engine[@]}" Tests/LocalizationTests.swift
+run_group release19-tests "${engine[@]}" Tests/Release19Tests.swift
 
 print ""
 print "Summary: ${#passed} group(s) passed ($total_checks checks), ${#failed} failed, $((SECONDS - started))s. Logs: $log_dir/"

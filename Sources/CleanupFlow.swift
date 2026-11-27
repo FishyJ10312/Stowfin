@@ -105,7 +105,8 @@ struct StoppedCleanupScan {
         storageCleanup != nil || cleanupOwnerFilter == nil || ownerResolver.cleanupOwner(item).id == cleanupOwnerFilter
     }
     func selectFirstPopulatedCleanupScope() {
-        let available = Set(cleanupItems.lazy.filter { !self.preferences.isIgnored($0.url) && self.matchesCleanupOwner($0) }.map { CleanupScope.forAssessment($0.assessment) })
+        let cutoff = Date().addingTimeInterval(-Double(unusedFilter) * 86_400)
+        let available = Set(cleanupItems.lazy.filter { !self.preferences.isIgnored($0.url) && self.matchesCleanupOwner($0) && (self.unusedFilter == 0 || self.lastActivity($0) < cutoff) }.map { CleanupScope.forAssessment($0.assessment) })
         selectCleanupScope(CleanupScope.allCases.first(where: available.contains) ?? .recommended)
     }
     func selectCleanupScope(_ scope: CleanupScope) {
@@ -114,6 +115,8 @@ struct StoppedCleanupScan {
     func clearCleanupFilters() {
         category = nil; groupFilter = nil; search = ""; minimumFilter = 0; onlySelected = false; presentation = .groups; cleanupTrail = []
     }
+    /// The "clear filters" button also leaves the long-unused view; switching scope keeps it.
+    func clearAllCleanupFilters() { clearCleanupFilters(); unusedFilter = 0; if ordering == .leastUsed { ordering = .size } }
     func returnCleanup() {
         guard !busy else { return }
         guard let previous = cleanupTrail.popLast() else {

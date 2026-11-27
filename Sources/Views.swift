@@ -9,6 +9,7 @@ struct ContentView: View {
     @Environment(\.openWindow) private var openWindow
     @EnvironmentObject var model: AppModel
     @ObservedObject private var language = LanguageSettings.shared
+    @ObservedObject private var updates = UpdateChecker.shared
     var body: some View {
         HStack(spacing: 0) {
             sidebar
@@ -50,7 +51,11 @@ struct ContentView: View {
         }.frame(minWidth: 1120, minHeight: 640).background(SweepStyle.background).tint(SweepStyle.accent).preferredColorScheme(.light)
         .id(language.choice)
         .onChange(of: language.choice) { model.workbench.refreshMemoryMenu(model.snapshot); model.scheduleStorageQuery() }
-        .onAppear { let open=openWindow; model.workbench.openMainWindow={open(id:"main")} }
+        .onAppear { let open=openWindow; model.workbench.openMainWindow={open(id:"main")}; updates.checkAutomaticallyIfDue() }
+        .alert(L("检查更新"), isPresented: $updates.showingResult) {
+            if updates.availableRelease != nil { Button(L("前往发布页")) { updates.openRelease() } }
+            Button(L("完成"), role: .cancel) {}
+        } message: { Text(L(updates.resultMessage)) }
         .quickLookPreview($model.previewURL)
         .sheet(isPresented: $model.showingReview) { ReviewView() }
         .sheet(item:$model.operationOutcome){OperationOutcomeView(outcome:$0)}
@@ -81,6 +86,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(L("轻扫")).font(.system(size: 26, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8)
                 Text(L(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.8.7")).font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.5))
+                UpdateStatusView()
             }.padding(.horizontal, 12).padding(.top, 20)
             Text(L("为重要的文件留空间")).font(.system(size: 12)).foregroundStyle(.white.opacity(0.58))
                 .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 28)
@@ -114,7 +120,13 @@ struct ContentView: View {
                 }.frame(height: 3)
             }.padding(12).padding(.bottom, 24)
             Button { model.showingIgnored = true } label: { Label(L("忽略列表"), systemImage: "eye.slash").frame(maxWidth: .infinity, alignment: .leading) }.buttonStyle(.plain).padding(12)
-            Button(action: model.openTrash) { Label(L("废纸篓"), systemImage: "trash").frame(maxWidth: .infinity, alignment: .leading) }.buttonStyle(.plain).padding(12)
+            Button(action: model.openTrash) {
+                HStack {
+                    Label(L("废纸篓"), systemImage: "trash")
+                    Spacer(minLength: 0)
+                    if let usage = model.trashUsage, usage.bytes > 0 { Text(L(formatBytes(usage.bytes))).font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.58)) }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }.buttonStyle(.plain).padding(12).help(L(model.trashUsage?.summary ?? "打开废纸篓"))
         }.font(.system(size: 13)).foregroundStyle(.white.opacity(0.8)).padding(16).frame(width: 192).background(SweepStyle.rail)
     }
 }
@@ -398,7 +410,26 @@ struct IssueView: View {
         }.padding(28).frame(width: 720)
     }
     private func scanDetails(_ result: ScanResult) -> some View {
-        Text(L("常用位置列出 1 MB 以上文件，缓存与日志保留最近 7 天；个人大文件从 100 MB 起。图库、数据库、应用、链接和云端文件会跳过。"))
-            .font(.system(size: 13)).foregroundStyle(SweepStyle.secondary).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(L("常用位置列出 1 MB 以上文件，缓存与日志保留最近 7 天；个人大文件从 100 MB 起。图库、数据库、应用、链接和云端文件会跳过。"))
+            Text(L("常用位置还会检查 npm、Cargo、Gradle、iOS 模拟器以及 Slack、VS Code、Discord 的缓存；只读取这些缓存目录本身，不读取旁边的设置、凭据和数据。"))
+        }.font(.system(size: 13)).foregroundStyle(SweepStyle.secondary).fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// Sidebar entry for the update check: a status line that opens a small menu.
+struct UpdateStatusView: View {
+    @ObservedObject private var updates = UpdateChecker.shared
+    var body: some View {
+        Menu {
+            Button(L("检查更新")) { updates.check() }.disabled(updates.state == .checking)
+            if updates.availableRelease != nil { Button(L("前往发布页"), action: updates.openRelease) }
+            Divider()
+            Toggle(L("每天自动检查更新"), isOn: $updates.automatic)
+        } label: {
+            Text(L(updates.statusTitle)).font(.system(size: 11))
+        }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+            .foregroundStyle(updates.availableRelease != nil ? Color(red: 0.88, green: 0.53, blue: 0.35) : .white.opacity(0.5))
+            .help(L("只向 GitHub 查询公开的发布列表，不发送本机或文件信息；不会自动下载或安装。"))
     }
 }

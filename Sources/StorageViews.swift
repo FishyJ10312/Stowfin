@@ -324,6 +324,7 @@ struct ScanChooserView: View {
             Text(L("旧扫描记录没有保存范围，请重新选择一次")).font(.system(size: 13)).foregroundStyle(SweepStyle.secondary)
             Button(L("常用位置")) { model.showingScanChooser = false; model.quickScan(); model.section = .results }
             Button(L("个人大文件")) { model.showingScanChooser = false; model.personalScan(); model.section = .results }
+            Button(L("长期未用的大文件")) { model.showingScanChooser = false; model.unusedLargeFileScan(); model.section = .results }
             Button(L("指定文件夹")) { model.showingScanChooser = false; model.chooseFolder() }
             HStack { Spacer(); Button(L("取消")) { model.showingScanChooser = false }.keyboardShortcut(.cancelAction) }
         }.padding(28).frame(width: 460)

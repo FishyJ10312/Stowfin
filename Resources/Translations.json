@@ -3334,5 +3334,245 @@
   {
     "source": "文件名中的应用名称与版本 + 本机安装信息",
     "english": "Application name and version from the file name, compared with installed applications"
+  },
+  {
+    "source": "iOS 模拟器",
+    "english": "iOS Simulator"
+  },
+  {
+    "source": "npm 下载缓存",
+    "english": "npm download cache"
+  },
+  {
+    "source": "Cargo 下载缓存",
+    "english": "Cargo download cache"
+  },
+  {
+    "source": "Gradle 依赖缓存",
+    "english": "Gradle dependency cache"
+  },
+  {
+    "source": "模拟器系统缓存",
+    "english": "Simulator system cache"
+  },
+  {
+    "source": "Slack 网页与代码缓存",
+    "english": "Slack web and code cache"
+  },
+  {
+    "source": "Visual Studio Code 网页与代码缓存",
+    "english": "Visual Studio Code web and code cache"
+  },
+  {
+    "source": "Discord 网页与代码缓存",
+    "english": "Discord web and code cache"
+  },
+  {
+    "source": "npm 安装任务",
+    "english": "npm installation task"
+  },
+  {
+    "source": "Cargo 编译任务",
+    "english": "Cargo build task"
+  },
+  {
+    "source": "Gradle 后台进程",
+    "english": "Gradle daemon"
+  },
+  {
+    "source": "正在运行的模拟器",
+    "english": "Running simulator"
+  },
+  {
+    "source": "已识别 npm 下载缓存；之后安装会重新下载，已安装的 node_modules 不受影响。",
+    "english": "Identified npm download cache. Future installs download packages again; installed node_modules folders are not affected."
+  },
+  {
+    "source": " 仅匹配 _cacache 的内容与索引结构，不包含 npm 配置、日志和全局安装的包。",
+    "english": " Only the _cacache content and index structures are matched, not npm settings, logs or globally installed packages."
+  },
+  {
+    "source": "已识别 Cargo 下载的 .crate 压缩包；之后编译会按需重新下载。",
+    "english": "Identified .crate archives downloaded by Cargo. Later builds download them again when needed."
+  },
+  {
+    "source": " 仅匹配 registry/cache 中的 .crate 文件，不包含已解压源码、Cargo 配置和凭据。",
+    "english": " Only .crate files in registry/cache are matched, not extracted sources, Cargo settings or credentials."
+  },
+  {
+    "source": "已识别 Gradle 依赖下载缓存；之后构建会重新下载，首次构建可能更慢。",
+    "english": "Identified Gradle dependency download cache. Later builds download it again, so the first build may be slower."
+  },
+  {
+    "source": " 仅匹配 modules-2/files-2.1 的依赖文件，不包含构建脚本、Gradle 配置和项目输出。",
+    "english": " Only dependency files in modules-2/files-2.1 are matched, not build scripts, Gradle settings or project output."
+  },
+  {
+    "source": "模拟器系统共享缓存；下次启动模拟器时会重新生成，首次启动会更慢。",
+    "english": "Simulator shared system cache. It is rebuilt the next time a simulator starts, so that start is slower."
+  },
+  {
+    "source": " 仅匹配 CoreSimulator/Caches/dyld，不包含模拟器设备、应用和数据。",
+    "english": " Only CoreSimulator/Caches/dyld is matched, not simulator devices, apps or data."
+  },
+  {
+    "source": "仅识别网页缓存；内容会重新下载，不包含登录状态、消息记录和设置。",
+    "english": "Web cache only. Content downloads again; sign-in state, message history and settings are not included."
+  },
+  {
+    "source": " 精确 Chromium 缓存结构，不涉及 Cookie、本地存储和数据库。",
+    "english": " Exact Chromium cache structure. Cookies, local storage and databases are not touched."
+  },
+  {
+    "source": "仅识别脚本编译缓存；应用下次启动时重新生成。",
+    "english": "Compiled script cache only. The app rebuilds it the next time it starts."
+  },
+  {
+    "source": " 精确 Chromium 代码缓存结构，不涉及 Cookie、本地存储和数据库。",
+    "english": " Exact Chromium code cache structure. Cookies, local storage and databases are not touched."
+  },
+  {
+    "source": "仅识别图形着色器缓存；应用下次启动时重新生成。",
+    "english": "Graphics shader cache only. The app rebuilds it the next time it starts."
+  },
+  {
+    "source": " 精确 GPUCache 结构，不涉及 Cookie、本地存储和数据库。",
+    "english": " Exact GPUCache structure. Cookies, local storage and databases are not touched."
+  },
+  {
+    "source": "按应用版本保存的脚本编译缓存；应用下次启动时重新生成。",
+    "english": "Compiled script cache kept per app version. The app rebuilds it the next time it starts."
+  },
+  {
+    "source": " 仅匹配以版本提交号命名的 CachedData 子目录，不包含扩展、设置和工作区数据。",
+    "english": " Only CachedData folders named after a version commit are matched, not extensions, settings or workspace data."
+  },
+  {
+    "source": "位于已知缓存目录，但不符合已核实的缓存结构，暂不加入清理。",
+    "english": "Inside a known cache folder, but it does not match the verified cache structure. Not added to cleanup."
+  },
+  {
+    "source": "可能是临时文件、锁文件或新版本格式；请自行确认是否仍需保留。",
+    "english": "It may be a temporary file, a lock file or a newer format. Check whether you still need it."
+  },
+  {
+    "source": " 清理前会检查相关任务是否仍在运行。",
+    "english": " Related tasks will be checked before cleanup."
+  },
+  {
+    "source": " 相关应用正在运行，清理前会自动退出。",
+    "english": " The related app is running and will be quit before cleanup."
+  },
+  {
+    "source": " 清理前会检查相关应用是否已退出。",
+    "english": " The related app's exit state will be checked before cleanup."
+  },
+  {
+    "source": "常用位置还会检查 npm、Cargo、Gradle、iOS 模拟器以及 Slack、VS Code、Discord 的缓存；只读取这些缓存目录本身，不读取旁边的设置、凭据和数据。",
+    "english": "Common locations also cover npm, Cargo, Gradle, iOS Simulator, Slack, VS Code and Discord caches. Only those cache folders are read, never the settings, credentials or data next to them."
+  },
+  {
+    "source": "废纸篓目前共占用 {0}（{1} 项）；清空废纸篓后才会释放这部分空间。",
+    "english": "The Trash now holds {0} ({1} items). This space is freed only when you empty the Trash."
+  },
+  {
+    "source": "废纸篓至少占用 {0}（{1} 项）；清空废纸篓后才会释放这部分空间。",
+    "english": "The Trash holds at least {0} ({1} items). This space is freed only when you empty the Trash."
+  },
+  {
+    "source": "无法读取废纸篓大小；可能需要在系统设置中允许完全磁盘访问。",
+    "english": "Cannot read the size of the Trash. Full Disk Access may be required in System Settings."
+  },
+  {
+    "source": "正在统计废纸篓占用…",
+    "english": "Measuring the Trash…"
+  },
+  {
+    "source": "查找长期未用的大文件",
+    "english": "Find large files unused for a long time"
+  },
+  {
+    "source": "长期未用的大文件",
+    "english": "Large files unused for a long time"
+  },
+  {
+    "source": "最久未用",
+    "english": "Least recently used"
+  },
+  {
+    "source": "未使用时间",
+    "english": "Unused for"
+  },
+  {
+    "source": "全部时间",
+    "english": "Any time"
+  },
+  {
+    "source": "{0} 个月以上未用",
+    "english": "Unused for {0}+ months"
+  },
+  {
+    "source": "一年以上未用",
+    "english": "Unused for over a year"
+  },
+  {
+    "source": "两年以上未用",
+    "english": "Unused for over two years"
+  },
+  {
+    "source": "按修改、打开和加入文件夹的时间中最近的一次计算；Spotlight 关闭时只能参考修改时间。",
+    "english": "Based on the latest of when the file was modified, opened or added to its folder. With Spotlight off, only the modification date is available."
+  },
+  {
+    "source": "最近使用时间",
+    "english": "Last used"
+  },
+  {
+    "source": "检查更新",
+    "english": "Check for Updates"
+  },
+  {
+    "source": "检查更新…",
+    "english": "Check for Updates…"
+  },
+  {
+    "source": "正在检查更新…",
+    "english": "Checking for updates…"
+  },
+  {
+    "source": "已是最新版本",
+    "english": "Up to date"
+  },
+  {
+    "source": "有新版本 {0}",
+    "english": "New version {0}"
+  },
+  {
+    "source": "检查更新失败",
+    "english": "Update check failed"
+  },
+  {
+    "source": "轻扫 {0} 已发布，当前为 {1}。前往发布页下载；轻扫不会自动下载或安装。",
+    "english": "Stowfin {0} is available. You have {1}. Download it from the release page; Stowfin never downloads or installs updates by itself."
+  },
+  {
+    "source": "当前 {0} 已是最新版本。",
+    "english": "{0} is the latest version."
+  },
+  {
+    "source": "暂时无法连接 GitHub，请稍后重试。",
+    "english": "Cannot reach GitHub right now. Try again later."
+  },
+  {
+    "source": "前往发布页",
+    "english": "Open Release Page"
+  },
+  {
+    "source": "每天自动检查更新",
+    "english": "Check for updates daily"
+  },
+  {
+    "source": "只向 GitHub 查询公开的发布列表，不发送本机或文件信息；不会自动下载或安装。",
+    "english": "Only asks GitHub for the public list of releases. No information about this Mac or its files is sent, and nothing is downloaded or installed automatically."
   }
 ]

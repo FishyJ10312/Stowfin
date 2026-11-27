@@ -64,8 +64,10 @@ struct SafetyPolicy {
         let root = parent.standardizedFileURL.path
         return path == root || path.hasPrefix(root == "/" ? "/" : root + "/")
     }
+    /// Rebuildable caches outside Library/Caches, each opened for a single rule.
+    var knownCacheRoots: [URL] { KnownCacheLocations.roots(home: home) }
     var maintenanceRoots: [URL] {
-        ["Library/Caches", "Library/Logs", "Library/Developer/Xcode/DerivedData"].map { home.appendingPathComponent($0) }
+        ["Library/Caches", "Library/Logs", "Library/Developer/Xcode/DerivedData"].map { home.appendingPathComponent($0) } + knownCacheRoots
     }
     func permits(_ url: URL) -> Bool {
         let url = url.standardizedFileURL
@@ -74,7 +76,11 @@ struct SafetyPolicy {
         let library = home.appendingPathComponent("Library")
         if Self.within(url, library) && !maintenanceRoots.contains(where: { Self.within(url, $0) }) { return false }
         let parts = url.pathComponents
-        if parts.contains(where: { $0.hasPrefix(".") }) { return false }
+        // Hidden components stay closed. Only the fixed components of an allowlisted cache root
+        // (such as ".npm" in ".npm/_cacache") are exempt; anything hidden below that root is not.
+        let opened = knownCacheRoots.first { Self.within(url, $0) }
+        let checked = opened.map { root in Array(parts.prefix(home.pathComponents.count)) + Array(parts.dropFirst(root.pathComponents.count)) } ?? parts
+        if checked.contains(where: { $0.hasPrefix(".") }) { return false }
         let protectedExtensions: Set<String> = ["app", "photoslibrary", "photolibrary", "musiclibrary", "fcpbundle", "band", "logicx", "lrdata", "lrcat", "lrcat-data", "sparsebundle", "bundle", "framework", "xcodeproj", "xcworkspace"]
         if parts.contains(where: { protectedExtensions.contains(($0 as NSString).pathExtension.lowercased()) }) { return false }
         let name = url.lastPathComponent.lowercased()
