@@ -8,7 +8,7 @@ assignees: ""
 
 ### 环境
 
-- 轻扫版本：1.8.7 Beta / 其他
+- 轻扫版本：1.9.0 Beta / 其他
 - macOS 版本：
 - 芯片：
 - 安装来源：GitHub Release / 自行构建

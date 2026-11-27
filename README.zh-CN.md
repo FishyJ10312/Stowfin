@@ -8,9 +8,9 @@
 
 轻扫是一款本地运行的 macOS 磁盘分析与清理工具。可以按应用或文件夹查看占用，把旧安装包、缓存、日志与个人文件分开，再决定哪些内容移到废纸篓。
 
-**1.8.7 Beta（构建 22）暂未经过 Apple 公证。** 应用的英文名为 **Stowfin**，简体中文名为**轻扫**。安装包使用本机签名证书，未使用 Apple Developer ID 签名。首次启动可能出现开发者验证提示。[安装与授权说明](docs/INSTALL.zh-CN.md)
+**1.9.0 Beta（构建 23）暂未经过 Apple 公证。** 应用的英文名为 **Stowfin**，简体中文名为**轻扫**。安装包使用本机签名证书，未使用 Apple Developer ID 签名。首次启动可能出现开发者验证提示。[安装与授权说明](docs/INSTALL.zh-CN.md)
 
-[下载 Apple 芯片版本](https://github.com/FishyJ10312/Stowfin/releases/download/v1.8.7-beta/Stowfin-1.8.7-beta-arm64.zip) · [Beta 发布页](https://github.com/FishyJ10312/Stowfin/releases/tag/v1.8.7-beta) · [反馈问题](https://github.com/FishyJ10312/Stowfin/issues/new?template=bug_report.md)
+[下载 Apple 芯片版本](https://github.com/FishyJ10312/Stowfin/releases/download/v1.9.0-beta/Stowfin-1.9.0-beta-arm64.zip) · [Beta 发布页](https://github.com/FishyJ10312/Stowfin/releases/tag/v1.9.0-beta) · [反馈问题](https://github.com/FishyJ10312/Stowfin/issues/new?template=bug_report.md)
 
 **素材和项目默认不勾选。** 可以主动勾选，也可以从空间分析的单文件详情加入待复核。移到废纸篓前需要二次确认。
 
@@ -92,11 +92,11 @@
 | 芯片 | Apple Silicon（arm64）；本版不提供 Intel 安装包 |
 | 系统 | 编译最低版本 macOS 14；实际验收环境为 macOS 27.2 |
 | 签名 | 本机自签名，启用 Hardened Runtime；**无 Developer ID、无 Apple 公证** |
-| 本机检查 | 全量 858 项自动检查通过（23 组），包含 126 项中断与恢复、34 项范围与复核检查，英文目录验证 834 条词条，另验证了 30,017 文件的完整清单 |
-| 原生界面 | 界面与 1.8.6 相同。核对了构建产物的版本、中英文显示名和签名；新增的安装包与 Go 缓存规则由自动检查用临时文件覆盖 |
+| 本机检查 | 全量 955 项自动检查通过（25 组），包含 126 项中断与恢复、62 项缓存白名单检查、35 项废纸篓占用 / 长期未用 / 检查更新检查，英文目录验证 894 条词条，另验证了 30,017 文件的完整清单 |
+| 原生界面 | 核对了构建产物的版本、中英文显示名和签名。新缓存规则、废纸篓占用、长期未用视图和检查更新由自动检查用临时文件覆盖；验收时没有启动应用，新界面元素暂无截图 |
 | 仍待验证 | 另一台 Mac 的默认 Gatekeeper 下载与首次启动、macOS 14 实机、真实外置盘拔插及不同文件系统 |
 
-这是用于收集反馈的 **Pre-release**。可以用临时文件夹试用扫描、手动选择、清理与恢复。[本版更新与验收记录](docs/RELEASE_1.8.7_BETA.md)
+这是用于收集反馈的 **Pre-release**。可以用临时文件夹试用扫描、手动选择、清理与恢复。[本版更新与验收记录](docs/RELEASE_1.9.0_BETA.md)
 
 ## 安装、权限与隐私
 
@@ -131,6 +131,6 @@ zsh check.sh
 
 欢迎反馈安装失败、权限问题、分类不准确、扫描遗漏、清理与恢复结果。提交 [Issue](https://github.com/FishyJ10312/Stowfin/issues/new?template=bug_report.md) 时请写明系统版本、芯片、版本号与复现步骤；截图遮住个人文件名和路径。
 
-[1.8.7 Beta 更新说明](docs/RELEASE_1.8.7_BETA.md) · [1.8.4 宣传文案](docs/PROMO.zh-CN.md) · [致谢与许可状态](NOTICE.md)
+[1.9.0 Beta 更新说明](docs/RELEASE_1.9.0_BETA.md) · [1.8.4 宣传文案](docs/PROMO.zh-CN.md) · [致谢与许可状态](NOTICE.md)
 
 本项目原创代码与文档采用 [MIT License](LICENSE)，第三方参考署名见 [NOTICE.md](NOTICE.md)。

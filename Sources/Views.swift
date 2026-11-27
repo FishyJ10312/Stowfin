@@ -85,7 +85,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(L("轻扫")).font(.system(size: 26, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8)
-                Text(L(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.8.7")).font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.5))
+                Text(L(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.9.0")).font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.5))
                 UpdateStatusView()
             }.padding(.horizontal, 12).padding(.top, 20)
             Text(L("为重要的文件留空间")).font(.system(size: 12)).foregroundStyle(.white.opacity(0.58))
